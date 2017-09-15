@@ -10,15 +10,29 @@ class Usermodel extends CI_Model
 		parent::__construct();
 	}
 
-	public function addUser($hp,$em,$nm,$ps,$pin)
+	public function addUser($hp,$em,$nm,$ps,$pin,$us)
 	{
 		$data = array(
 			'hp' => $hp,
 			'email' => $em,
 			'nama' => $nm,
 			'password' => $ps,
-			'pin' => $pin
+			'pin' => $pin,
+			'username' => $us,
+			'tgl_daftar' => date('Y-m-d H:i:s'),			
 		);
 		return $this->db->insert('user',$data);
+	}
+
+	public function addSession($us,$se,$ip)
+	{
+		$data = array(
+			'username' => $us,
+			'session' => $se,
+			'created_at' => date('Y-m-d H:i:s'),
+			'last_access' => date('Y-m-d H:i:s'),
+			'ipaddress' => $ip,
+		);
+		return $this->db->insert('sessions',$data);
 	}
 }
