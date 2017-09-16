@@ -10,17 +10,21 @@ class User extends REST_Controller
 		$this->load->model('keymodel','kym');
 		$this->load->model('otpmodel','otm');
 		$this->load->model('usermodel','usm');
+		$this->load->model('logmodel','lgm');
 	}
 
 	public function kirimotp_get()
 	{
 		$hp = $this->get('hp');
 		$key = $this->get('key');
+		$ip = $this->_get_ip_address();
+		$this->lgm->logAccess('user/kirimotp',$ip,$key);
 		if($this->_key_exist($key))
 		{
 			$this->_generateOTP($hp);
 			$this->response([
                 'status' => TRUE,
+                'kode' => 11003,
                 'message' => 'Kirim OTP berhasil'
             ], REST_Controller::HTTP_OK);
 		}
@@ -28,6 +32,7 @@ class User extends REST_Controller
 		{
 			$this->response([
                 'status' => FALSE,
+                'kode' => 10002,
                 'message' => 'Invalid API key'
             ], REST_Controller::HTTP_BAD_REQUEST);
 		}
@@ -38,6 +43,8 @@ class User extends REST_Controller
 		$hp = $this->get('hp');
 		$otp = $this->get('otp');
 		$key = $this->get('key');
+		$ip = $this->_get_ip_address();
+		$this->lgm->logAccess('user/validateotp',$ip,$key);
 		if($this->_key_exist($key))
 		{
 			if($this->otm->isOtpExist($hp,$otp)){
@@ -49,7 +56,7 @@ class User extends REST_Controller
 			}
 			else{
 				$this->response([
-	                'status' => TRUE,
+	                'status' => FALSE,
 	                'kode' => 11002,
 	                'message' => 'OTP not Valid'
 	            ], REST_Controller::HTTP_OK);	
@@ -75,34 +82,77 @@ class User extends REST_Controller
 		$ps = $this->post('password');
 		$pin = $this->post('pin');
 		$us = $this->post('username');
+		$ip = $this->_get_ip_address();
+		$this->lgm->logAccess('user/daftar',$ip,$key);
 		if($this->_key_exist($key))
 		{
 			if($this->otm->isOtpExist($hp,$otp))
 			{
-				if($this->usm->addUser($hp,$em,$nm,$ps,$pin,$us))
+				$valid = false;
+				//cek hp sudah terdaftar
+				if($this->usm->isHpExist($hp))
 				{
-					$ip = $this->_get_ip_address;
-					$session = $this->_generateSession($us,$ip);
-					$this->response([
-		                'status' => TRUE,
-		                'kode' => 12001,
-		                'message' => 'Berhasil menambahkan user',
-		                'session' => $session,
-		            ], REST_Controller::HTTP_OK);
+					$kode = 12003;
+					$msg = 'No Handphone sudah terdaftar!';
+				}
+				//cek username sudah terdaftar
+				else if(!$this->usm->isUsernameExist($us))
+				{
+					$kode = 12006;
+					$msg = 'Username sudah terdaftar!';
+				}
+				//cek email valid
+				else if(!$this->_valid_email($em))
+				{
+					$kode = 12004;
+					$msg = 'Format email tidak valid!';
+				}
+				//cek pin 6 angka
+				else if(!$this->_valid_pin($pin))
+				{
+					$kode = 12005;
+					$msg = 'Format pin harus berupa 6 angka!';
+				}
+				else
+				{
+					$valid = true;
+				}
+
+				if($valid)
+				{
+					if($this->usm->addUser($hp,$em,$nm,$ps,$pin,$us))
+					{
+						$ip = $this->_get_ip_address();
+						$session = $this->_generateSession($us,$ip);
+						$this->response([
+			                'status' => TRUE,
+			                'kode' => 12001,
+			                'message' => 'Berhasil menambahkan user',
+			                'session' => $session,
+			            ], REST_Controller::HTTP_OK);
+					}
+					else
+					{
+						$this->response([
+			                'status' => FALSE,
+			                'kode' => 12002,
+			                'message' => 'Gagal menambahkan user ke database'
+			            ], REST_Controller::HTTP_OK);		
+					}
 				}
 				else
 				{
 					$this->response([
-		                'status' => TRUE,
-		                'kode' => 12002,
-		                'message' => 'Gagal menambahkan user ke database'
-		            ], REST_Controller::HTTP_OK);		
+		                'status' => FALSE,
+		                'kode' => $kode,
+		                'message' => $msg
+		            ], REST_Controller::HTTP_OK);
 				}
 			}
 			else
 			{
 				$this->response([
-	                'status' => TRUE,
+	                'status' => FALSE,
 	                'kode' => 11002,
 	                'message' => 'OTP not Valid'
 	            ], REST_Controller::HTTP_OK);	
@@ -143,14 +193,11 @@ class User extends REST_Controller
 	}
 
 	private function _get_ip_address() {
-	    // check for shared internet/ISP IP
 	    if (!empty($_SERVER['HTTP_CLIENT_IP']) && validate_ip($_SERVER['HTTP_CLIENT_IP'])) {
 	        return $_SERVER['HTTP_CLIENT_IP'];
 	    }
 
-	    // check for IPs passing through proxies
 	    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-	        // check if multiple ips exist in var
 	        if (strpos($_SERVER['HTTP_X_FORWARDED_FOR'], ',') !== false) {
 	            $iplist = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
 	            foreach ($iplist as $ip) {
@@ -171,7 +218,6 @@ class User extends REST_Controller
 	    if (!empty($_SERVER['HTTP_FORWARDED']) && $this->_validate_ip($_SERVER['HTTP_FORWARDED']))
 	        return $_SERVER['HTTP_FORWARDED'];
 
-	    // return unreliable ip since all else failed
 	    return $_SERVER['REMOTE_ADDR'];
 	}
 
@@ -179,16 +225,9 @@ class User extends REST_Controller
 	    if (strtolower($ip) === 'unknown')
 	        return false;
 
-	    // generate ipv4 network address
 	    $ip = ip2long($ip);
-
-	    // if the ip is set and not equivalent to 255.255.255.255
 	    if ($ip !== false && $ip !== -1) {
-	        // make sure to get unsigned long representation of ip
-	        // due to discrepancies between 32 and 64 bit OSes and
-	        // signed numbers (ints default to signed in PHP)
 	        $ip = sprintf('%u', $ip);
-	        // do private network range checking
 	        if ($ip >= 0 && $ip <= 50331647) return false;
 	        if ($ip >= 167772160 && $ip <= 184549375) return false;
 	        if ($ip >= 2130706432 && $ip <= 2147483647) return false;
@@ -199,5 +238,27 @@ class User extends REST_Controller
 	        if ($ip >= 4294967040) return false;
 	    }
 	    return true;
+	}
+
+	private function _valid_email($em)
+	{
+		if (filter_var($em, FILTER_VALIDATE_EMAIL))
+			return true;
+		else
+			return false;
+	}
+
+	private function _valid_pin($pin)
+	{
+		$options = array(
+		    'options' => array(
+		        'min_range' => 6,
+		        'max_range' => 6,
+		    )
+		);
+		if (filter_var($pin, FILTER_VALIDATE_INT, $options))
+			return true;
+		else
+			return false;
 	}
 }
