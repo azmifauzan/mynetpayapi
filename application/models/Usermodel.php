@@ -7,7 +7,7 @@ class Usermodel extends CI_Model
 		parent::__construct();
 	}
 
-	public function addUser($hp,$em,$nm,$ps,$pin,$us)
+	public function addUser($hp,$em,$nm,$ps,$pin)
 	{
 		$data = array(
 			'hp' => $hp,
@@ -15,16 +15,15 @@ class Usermodel extends CI_Model
 			'nama' => $nm,
 			'password' => $ps,
 			'pin' => $pin,
-			'username' => $us,
 			'tgl_daftar' => date('Y-m-d H:i:s'),			
 		);
 		return $this->db->insert('user',$data);
 	}
 
-	public function addSession($us,$se,$ip)
+	public function addSession($hp,$se,$ip)
 	{
 		$data = array(
-			'username' => $us,
+			'hp' => $hp,
 			'session' => $se,
 			'created_at' => date('Y-m-d H:i:s'),
 			'last_access' => date('Y-m-d H:i:s'),
@@ -40,16 +39,26 @@ class Usermodel extends CI_Model
 		if($jum == 1)
 			return true;
 		else
-			return false
+			return false;
 	}
 
-	public function isUsernameExist($us)
+	// public function isUsernameExist($us)
+	// {
+	// 	$this->db->where('username',$us);
+	// 	$jum = $this->db->get('user')->num_rows();
+	// 	if($jum == 1)
+	// 		return true;
+	// 	else
+	// 		return false
+	// }
+
+	public function getMutasi($hp,$ba,$jd)
 	{
-		$this->db->where('username',$us);
-		$jum = $this->db->get('user')->num_rows();
-		if($jum == 1)
-			return true;
-		else
-			return false
+		$this->db->select('trx.waktu_transaksi,jenis_trx.jenis,trx.debetkredit,trx.jumlah,trx.keterangan');
+		$this->db->where('hp',$hp);
+		$this->db->limit($jd,$ba);
+		$this->db->order_by('waktu_transaksi');
+		$this->db->join('jenis_trx','trx.jenis_transaksi = jenis_trx.id');
+		return $this->db->get('trx')->result();
 	}
 }

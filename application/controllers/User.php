@@ -18,7 +18,8 @@ class User extends REST_Controller
 		$hp = $this->get('hp');
 		$key = $this->get('key');
 		$ip = $this->_get_ip_address();
-		$this->lgm->logAccess('user/kirimotp',$ip,$key);
+		$var = 'hp:'.$hp;
+		$this->lgm->logAccess('user/kirimotp',$ip,$key,$var);
 		if($this->_key_exist($key))
 		{
 			$this->_generateOTP($hp);
@@ -44,7 +45,8 @@ class User extends REST_Controller
 		$otp = $this->get('otp');
 		$key = $this->get('key');
 		$ip = $this->_get_ip_address();
-		$this->lgm->logAccess('user/validateotp',$ip,$key);
+		$var = "hp:$hp;otp:$otp";
+		$this->lgm->logAccess('user/validateotp',$ip,$key,$var);
 		if($this->_key_exist($key))
 		{
 			if($this->otm->isOtpExist($hp,$otp)){
@@ -81,9 +83,9 @@ class User extends REST_Controller
 		$nm = $this->post('nama');
 		$ps = $this->post('password');
 		$pin = $this->post('pin');
-		$us = $this->post('username');
 		$ip = $this->_get_ip_address();
-		$this->lgm->logAccess('user/daftar',$ip,$key);
+		$var = "hp:$hp;otp:$otp;email:$em;nama:$nm;password:$ps;pin:$pin";
+		$this->lgm->logAccess('user/daftar',$ip,$key,$var);
 		if($this->_key_exist($key))
 		{
 			if($this->otm->isOtpExist($hp,$otp))
@@ -94,12 +96,6 @@ class User extends REST_Controller
 				{
 					$kode = 12003;
 					$msg = 'No Handphone sudah terdaftar!';
-				}
-				//cek username sudah terdaftar
-				else if(!$this->usm->isUsernameExist($us))
-				{
-					$kode = 12006;
-					$msg = 'Username sudah terdaftar!';
 				}
 				//cek email valid
 				else if(!$this->_valid_email($em))
@@ -120,7 +116,7 @@ class User extends REST_Controller
 
 				if($valid)
 				{
-					if($this->usm->addUser($hp,$em,$nm,$ps,$pin,$us))
+					if($this->usm->addUser($hp,$em,$nm,$ps,$pin))
 					{
 						$ip = $this->_get_ip_address();
 						$session = $this->_generateSession($us,$ip);
@@ -168,6 +164,75 @@ class User extends REST_Controller
 		}
 	}
 
+	public function login_post()
+	{
+		$key = $this->post('key');
+		$hp = $this->post('hp');
+		$ps = $this->post('password');
+		$ip = $this->_get_ip_address();
+		$var = "hp:$hp;password:$ps";
+		$this->lgm->logAccess('user/login',$ip,$key,$var);				
+
+		if($this->_key_exist($key))
+		{
+			if($this->usm->cekLogin($hp,$ps))
+			{
+				$session = $this->_generateSession($hp,$ip);
+				$this->response([
+	                'status' => TRUE,
+	                'kode' => 13001,
+	                'message' => 'Login berhasil',
+	                'session' => $session
+	            ], REST_Controller::HTTP_OK);
+			}
+			else
+			{
+				$this->response([
+	                'status' => FALSE,
+	                'kode' => 13002,
+	                'message' => 'Username / Password tidak dikenali!'
+	            ], REST_Controller::HTTP_BAD_REQUEST);
+			}
+		}
+		else
+		{
+			$this->response([
+                'status' => FALSE,
+                'kode' => 10002,
+                'message' => 'Invalid API key'
+            ], REST_Controller::HTTP_BAD_REQUEST);
+		}
+	}
+
+	public function cetakmutasi_get()
+	{
+		$key = $this->get('key');
+		$hp = $this->get('hp');
+		$ba = $this->get('batas_atas');
+		$jd = $this->get('jumlah_data');
+		if($this->_key_exist($key))
+		{
+			$mutasi = $this->usm->getMutasi($hp,$ba,$jd);
+			$this->response([
+                'status' => TRUE,
+                'kode' => 14001,
+                'message' => 'Cetak Mutasi',
+                'hp' => $hp,
+                'batas_atas' => $ba,
+                'jumlah_data' => $jd,
+                'mutasi' => $mutasi
+            ], REST_Controller::HTTP_OK);
+		}
+		else
+		{
+			$this->response([
+                'status' => FALSE,
+                'kode' => 10002,
+                'message' => 'Invalid API key'
+            ], REST_Controller::HTTP_BAD_REQUEST);
+		}
+	}
+
 	private function _generateOTP($hp)
 	{
 		$otp = rand(100000,999999);
@@ -187,9 +252,9 @@ class User extends REST_Controller
 		}
 	}
 
-	private function _generateSession($us,$ip)
+	private function _generateSession($hp,$ip)
 	{
-		return sha1($us.$ip.date('Y-m-d H:i:s'));
+		return sha1($hp.$ip.date('Y-m-d H:i:s'));
 	}
 
 	private function _get_ip_address() {
