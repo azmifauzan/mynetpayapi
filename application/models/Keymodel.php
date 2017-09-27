@@ -19,4 +19,15 @@ class Keymodel extends CI_Model
 		else
 			return false;
 	}
+
+	public function checkSession($ss)
+	{
+		$this->db->where('access',$ss);
+		$q = $this->db->get('session');
+		$jum = $q->num_rows();
+		if($jum == 1 && $q->row()->destroy_at == '0000-00-00 00:00:00')
+			return true;
+		else
+			return false;
+	}
 }

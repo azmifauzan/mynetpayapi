@@ -19,7 +19,7 @@ class User extends REST_Controller
 		$key = $this->get('key');
 		$ip = $this->_get_ip_address();
 		$var = 'hp:'.$hp;
-		$this->lgm->logAccess('user/kirimotp',$ip,$key,$var);
+		$this->lgm->logAccess('user/kirimotp',$ip,$key,'',$var);
 		if($this->_key_exist($key))
 		{
 			$this->_generateOTP($hp);
@@ -46,7 +46,7 @@ class User extends REST_Controller
 		$key = $this->get('key');
 		$ip = $this->_get_ip_address();
 		$var = "hp:$hp;otp:$otp";
-		$this->lgm->logAccess('user/validateotp',$ip,$key,$var);
+		$this->lgm->logAccess('user/validateotp',$ip,$key,'',$var);
 		if($this->_key_exist($key))
 		{
 			if($this->otm->isOtpExist($hp,$otp)){
@@ -85,7 +85,7 @@ class User extends REST_Controller
 		$pin = $this->post('pin');
 		$ip = $this->_get_ip_address();
 		$var = "hp:$hp;otp:$otp;email:$em;nama:$nm;password:$ps;pin:$pin";
-		$this->lgm->logAccess('user/daftar',$ip,$key,$var);
+		$this->lgm->logAccess('user/daftar',$ip,$key,'',$var);
 		if($this->_key_exist($key))
 		{
 			if($this->otm->isOtpExist($hp,$otp))
@@ -104,11 +104,11 @@ class User extends REST_Controller
 					$msg = 'Format email tidak valid!';
 				}
 				//cek pin 6 angka
-				else if(!$this->_valid_pin($pin))
-				{
-					$kode = 12005;
-					$msg = 'Format pin harus berupa 6 angka!';
-				}
+				// else if(!$this->_valid_pin($pin))
+				// {
+				// 	$kode = 12005;
+				// 	$msg = 'Format pin harus berupa 6 angka!';
+				// }
 				else
 				{
 					$valid = true;
@@ -171,7 +171,7 @@ class User extends REST_Controller
 		$ps = $this->post('password');
 		$ip = $this->_get_ip_address();
 		$var = "hp:$hp;password:$ps";
-		$this->lgm->logAccess('user/login',$ip,$key,$var);				
+		$this->lgm->logAccess('user/login',$ip,$key,'',$var);				
 
 		if($this->_key_exist($key))
 		{
@@ -207,15 +207,19 @@ class User extends REST_Controller
 	public function cetakmutasi_get()
 	{
 		$key = $this->get('key');
+		$ss = $this->get('session');
 		$hp = $this->get('hp');
 		$ba = $this->get('batas_atas');
 		$jd = $this->get('jumlah_data');
-		if($this->_key_exist($key))
+		$ip = $this->_get_ip_address();
+		$var = "hp:$hp;batasatas:$ba;jumlahdata:$jd";
+		$this->lgm->logAccess('user/cetakmutasi',$ip,$key,$ss,$var);
+		if($this->_key_exist($key) && $this->_session_exist($ss))
 		{
 			$mutasi = $this->usm->getMutasi($hp,$ba,$jd);
 			$this->response([
                 'status' => TRUE,
-                'kode' => 14001,
+                'kode' => 14002,
                 'message' => 'Cetak Mutasi',
                 'hp' => $hp,
                 'batas_atas' => $ba,
@@ -227,8 +231,37 @@ class User extends REST_Controller
 		{
 			$this->response([
                 'status' => FALSE,
-                'kode' => 10002,
-                'message' => 'Invalid API key'
+                'kode' => 10003,
+                'message' => 'Invalid API key or Session'
+            ], REST_Controller::HTTP_BAD_REQUEST);
+		}
+	}
+
+	public function ceksaldo_get()
+	{
+		$key = $this->get('key');
+		$hp = $this->get('hp');
+		$ss = $this->get('session');
+		$ip = $this->_get_ip_address();
+		$var = "hp:$hp";
+		$this->lgm->logAccess('user/ceksaldo',$ip,$key,$ss,$var);
+		if($this->_key_exist($key) && $this->_session_exist($ss))
+		{
+			$saldo = $this->usm->getSaldo($hp);
+			$this->response([
+                'status' => TRUE,
+                'kode' => 14001,
+                'message' => 'Cek Saldo',
+                'hp' => $hp,                
+                'saldo' => $saldo
+            ], REST_Controller::HTTP_OK);
+		}
+		else
+		{
+			$this->response([
+                'status' => FALSE,
+                'kode' => 10003,
+                'message' => 'Invalid API key or Session'
             ], REST_Controller::HTTP_BAD_REQUEST);
 		}
 	}
@@ -244,6 +277,17 @@ class User extends REST_Controller
 	private function _key_exist($key)
 	{
 		if($this->kym->checkKey($key))
+		{
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+
+	private function _session_exist($ss)
+	{
+		if($this->kym->checkSession($ss))
 		{
 			return true;
 		}

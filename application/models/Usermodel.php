@@ -13,8 +13,8 @@ class Usermodel extends CI_Model
 			'hp' => $hp,
 			'email' => $em,
 			'nama' => $nm,
-			'password' => $ps,
-			'pin' => $pin,
+			'password' => md5($ps),
+			'pin' => md5($pin),
 			'tgl_daftar' => date('Y-m-d H:i:s'),			
 		);
 		return $this->db->insert('user',$data);
@@ -60,5 +60,11 @@ class Usermodel extends CI_Model
 		$this->db->order_by('waktu_transaksi');
 		$this->db->join('jenis_trx','trx.jenis_transaksi = jenis_trx.id');
 		return $this->db->get('trx')->result();
+	}
+
+	public function getSaldo($hp)
+	{
+		$this->db->where('hp',$hp);
+		return $this->db->get('user')->row()->saldo;
 	}
 }
