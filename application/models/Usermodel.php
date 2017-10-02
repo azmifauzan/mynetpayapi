@@ -65,6 +65,10 @@ class Usermodel extends CI_Model
 	public function getSaldo($hp)
 	{
 		$this->db->where('hp',$hp);
-		return $this->db->get('user')->row()->saldo;
+		$q = $this->db->get('user');
+		if($q->num_rows == 1)
+		    return $q->row()->saldo;
+		else
+		    return null;
 	}
 }

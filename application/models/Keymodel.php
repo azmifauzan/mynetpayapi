@@ -12,7 +12,7 @@ class Keymodel extends CI_Model
 
 	public function checkKey($key)
 	{
-		$this->db->where('apikey',$key);
+		$this->db->where('apikey',MD5($key.'mynetpay2017'));
 		$jum = $this->db->get('mynetpaykey')->num_rows();
 		if($jum == 1)
 			return true;
