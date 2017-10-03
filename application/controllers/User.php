@@ -281,7 +281,7 @@ class User extends REST_Controller
 			$this->response([
                 'status' => FALSE,
                 'kode' => 10003,
-                'message' => 'Invalid API key or Session'
+                'message' => 'Invalid Session'
             ], REST_Controller::HTTP_BAD_REQUEST);
 		}
 	}
@@ -290,6 +290,79 @@ class User extends REST_Controller
 	{
 		$hp = $this->post('hp');
 		$em = $this->post('email');
+		if($this->usm->checkEmail($hp,$em))
+		{
+			if($this->_kirimEmailResetPassword())
+			{
+				$this->response([
+		            'status' => TRUE,
+		            'kode' => 15001,
+		            'message' => 'Link reset password telah dikirimkan ke email',	            
+		        ], REST_Controller::HTTP_OK);
+			}
+			else
+			{
+				$this->response([
+	                'status' => FALSE,
+	                'kode' => 15002,
+	                'message' => 'Gagal mengirimkan email reset password'
+	            ], REST_Controller::HTTP_BAD_REQUEST);
+			}
+		}
+		else
+		{
+			$this->response([
+                'status' => FALSE,
+                'kode' => 15003,
+                'message' => 'hp / email tidak terdaftar!'
+            ], REST_Controller::HTTP_BAD_REQUEST);
+		}
+	}
+
+	public function logout_get()
+	{
+		$hp = $this->get('hp');
+		$ss = $this->get('session');
+		if($this->usm->destroySession($hp,$ss))
+		{
+			$this->response([
+	            'status' => TRUE,
+	            'kode' => 13003,
+	            'message' => 'Logout berhasil',	            
+	        ], REST_Controller::HTTP_OK);
+		}
+		else
+		{
+			$this->response([
+                'status' => FALSE,
+                'kode' => 13004,
+                'message' => 'Gagal logout'
+            ], REST_Controller::HTTP_BAD_REQUEST);
+		}
+	}
+
+	public function info_get()
+	{
+		$hp = $this->get('hp');
+		$ss = $this->get('session');
+		if($this->_session_exist($ss))
+		{
+			$this->response([
+	            'status' => TRUE,
+	            'kode' => 16001,
+	            'message' => 'User Info',
+	            'hp' => $hp,
+	            'info' => $this->usm->getUserInfo($hp);	            
+	        ], REST_Controller::HTTP_OK);
+		}
+		else
+		{
+			$this->response([
+                'status' => FALSE,
+                'kode' => 10003,
+                'message' => 'Invalid Session'
+            ], REST_Controller::HTTP_BAD_REQUEST);
+		}
 	}
 
 	private function _generateOTP($hp)
@@ -396,5 +469,10 @@ class User extends REST_Controller
 			return true;
 		else
 			return false;
+	}
+
+	private function _kirimEmailResetPassword()
+	{
+		return true;
 	}
 }

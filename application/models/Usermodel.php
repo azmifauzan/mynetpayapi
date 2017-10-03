@@ -24,9 +24,9 @@ class Usermodel extends CI_Model
 	{
 		$data = array(
 			'hp' => $hp,
-			'session' => $se,
-			'created_at' => date('Y-m-d H:i:s'),
-			'last_access' => date('Y-m-d H:i:s'),
+			'access' => $se,
+			'generate_at' => date('Y-m-d H:i:s'),
+			'destroy_at' => date('0000-00-00 00:00:00'),
 			'ipaddress' => $ip,
 		);
 		return $this->db->insert('sessions',$data);
@@ -70,5 +70,30 @@ class Usermodel extends CI_Model
 		    return $q->row()->saldo;
 		else
 		    return null;
+	}
+
+	public function checkEmail($hp,$em)
+	{
+		$this->db->where('hp',$hp);
+		$this->db->where('email',$em);
+		if($this->db->get('user')->num_rows == 1)
+		    return true;
+		else
+		    return false;
+	}
+
+	public function destroySession($hp,$ss)
+	{
+		$this->db->set('destroy_at',date('Y-m-d H:i:s'));
+		$this->db->where('hp',$hp);
+		$this->db->where('session',$ss);
+		return $this->db->update('session');
+	}
+
+	public function getUserInfo($hp)
+	{
+		$this->db->select('hp,email,tgl_daftar,saldo');
+		$this->db->where('hp',$hp);
+		return $this->db->get('user')->result();
 	}
 }
