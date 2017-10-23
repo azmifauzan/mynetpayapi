@@ -72,7 +72,7 @@ class Usermodel extends CI_Model
 		$tglak = $tglb." 23:59:59";
 		$this->db->select('trx.hp_penerima,trx.hp_pengirim,trx.waktu_transaksi,jenis_trx.jenis,trx.debetkredit,trx.jumlah,trx.keterangan');
 		$this->db->where("hp_pengirim = $hp or hp_penerima = $hp");
-		$this->db->where("waktu_transaksi >= $tglaw and waktu_transaksi <= $tglak");		
+		$this->db->where("waktu_transaksi >= '$tglaw' and waktu_transaksi <= '$tglak'");		
 		$this->db->order_by('waktu_transaksi');
 		$this->db->join('jenis_trx','trx.jenis_transaksi = jenis_trx.id');
 		$dt = $this->db->get('trx');
@@ -102,7 +102,7 @@ class Usermodel extends CI_Model
 	{
 		$this->db->where('hp',$hp);
 		$q = $this->db->get('user');
-		if($q->num_rows == 1)
+		if($q->num_rows() == 1)
 		    return $q->row()->saldo;
 		else
 		    return null;
@@ -112,7 +112,7 @@ class Usermodel extends CI_Model
 	{
 		$this->db->where('hp',$hp);
 		$this->db->where('email',$em);
-		if($this->db->get('user')->num_rows == 1)
+		if($this->db->get('user')->num_rows() == 1)
 		    return true;
 		else
 		    return false;
@@ -122,13 +122,13 @@ class Usermodel extends CI_Model
 	{
 		$this->db->set('destroy_at',date('Y-m-d H:i:s'));
 		$this->db->where('hp',$hp);
-		$this->db->where('session',$ss);
+		$this->db->where('access',$ss);
 		return $this->db->update('session');
 	}
 
 	public function getUserInfo($hp)
 	{
-		$this->db->select('hp,nama,email,tgl_daftar,saldo');
+		$this->db->select('hp,nama,email,tgl_daftar,saldo,nama_bank,nama_rekening,no_rekening');
 		$this->db->where('hp',$hp);
 		return $this->db->get('user')->result();
 	}
@@ -154,11 +154,14 @@ class Usermodel extends CI_Model
 	        return false;
 	}
 
-	public function updateProfil($hp,$nama,$email)
+	public function updateProfil($hp,$nama,$email,$nmbank,$nmrek,$norek)
 	{
 		$this->db->where('hp',$hp);
 		$this->db->set('nama',$nama);
 		$this->db->set('email',$email);
+		$this->db->set('nama_bank',$nmbank);
+		$this->db->set('nama_rekening',$nmrek);
+		$this->db->set('no_rekening',$norek);
 		return $this->db->update('user');
 	}
 
@@ -203,6 +206,64 @@ class Usermodel extends CI_Model
 	public function getNamaFromHp($hp)
 	{
 		$this->db->where('hp',$hp);
-		return $this->db->get('user')->row()->nama;
+		$q = $this->db->get('user');
+		if($q->num_rows() == 1)
+			return $q->row()->nama;
+		else
+			return "null";
 	}
+
+	public function simpanSmsGateway($sms,$idsms,$hp,$otp)
+	{
+		$this->db->where('hp',$hp);
+		$this->db->where('kodeotp',$otp);
+		$this->db->set('result_smsgateway',$sms);
+		$this->db->set('sms_id',$idsms);
+		return $this->db->update('otp');
+	}
+
+	public function bankDataExist($hp)
+	{
+		$this->db->where('hp',$hp);
+		$q = $this->db->get('user');
+		if($q->num_rows() == 1)
+		{
+			$us = $q->row();
+			if($us->nama_bank == "" || $us->nama_rekening == "" || $us->no_rekening == "")
+			{
+				return false;
+			}
+			else
+			{
+				return true;
+			}
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	public function enoughSaldoWithdraw($hp,$jumlah)
+	{
+		$this->db->where('hp',$hp);
+		$q = $this->db->get('user');
+		if($q->num_rows() == 1)
+		{
+			$us = $q->row();
+			if($us->saldo >= $jumlah)
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
 }

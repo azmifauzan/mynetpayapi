@@ -12,21 +12,57 @@ class User extends REST_Controller
 		$this->load->model('usermodel','usm');
 		$this->load->model('logmodel','lgm');
 	}
+	
+	public function cekuserdaftar_get()
+	{
+	    $hp = $this->get('hp');
+	    if($this->usm->isHpExist($hp))
+	    {
+	        $this->response([
+		                'status' => FALSE,
+		                'kode' => 12011,
+		                'message' => 'No HP telah terdaftar'
+		            ], REST_Controller::HTTP_OK);
+	    }
+	    else
+	    {
+	        $this->response([
+		                'status' => TRUE,
+		                'kode' => 120012,
+		                'message' => 'No HP belum terdaftar'
+		            ], REST_Controller::HTTP_OK); 
+	    }
+	}
 
 	public function kirimotp_get()
 	{
 		$hp = $this->get('hp');
-		$nama = $this->usm->getNamaFromHp($hp);
+		//$nama = $this->usm->getNamaFromHp($hp);
 		$otp = $this->_generateOTP($hp);
-		$sms = $this->_kirimSms($hp,$nama,$otp);	
-
-		$this->response([
-            'status' => TRUE,
-            'kode' => 11003,
-            'message' => 'Kirim OTP berhasil',
-            'otp' => $otp,
-            'smsgateway' => $sms
-        ], REST_Controller::HTTP_OK);	
+		$sms = $this->_kirimSms($hp,$otp);
+		$jsms = json_decode($sms);
+		
+		if(isset($jsms->messages[0]->messageId))
+		{
+			$idsms = $jsms->messages[0]->messageId;
+			$this->usm->simpanSmsGateway($sms,$idsms,$hp,$otp);	
+	
+			$this->response([
+		            'status' => TRUE,
+		            'kode' => 11003,
+		            'message' => 'Kirim OTP berhasil',
+		            'otp' => $otp,
+		            'smsgateway' => $jsms
+		        ], REST_Controller::HTTP_OK);	
+		}
+		else
+		{
+			$this->response([
+		                'status' => FALSE,
+		                'kode' => 11009,
+		                'message' => 'Gagal mengirim sms'
+		            ], REST_Controller::HTTP_OK);	
+		}
 	}
 
 	public function validateotp_get()
@@ -54,14 +90,14 @@ class User extends REST_Controller
 	{
 		$hp = $this->post('hp');
 		//$key = $this->post('key');
-		//$otp = $this->post('otp');
+		$otp = $this->post('otp');
 		$em = $this->post('email');
 		$nm = $this->post('nama');
 		$ps = $this->post('password');
 		$pin = $this->post('pin');
 		
-		//if($this->otm->isOtpExist($hp,$otp))
-		//{
+		if($this->otm->isOtpExist($hp,$otp))
+		{
 			$valid = false;
 			//cek hp sudah terdaftar
 			if($this->usm->isHpExist($hp))
@@ -111,7 +147,6 @@ class User extends REST_Controller
 	                'message' => $msg
 	            ], REST_Controller::HTTP_OK);
 			}
-		/*
 		}
 		else
 		{
@@ -121,7 +156,6 @@ class User extends REST_Controller
                 'message' => 'OTP not Valid'
             ], REST_Controller::HTTP_OK);	
 		}
-		*/
 	}
 
 	public function login_post()
@@ -341,10 +375,13 @@ class User extends REST_Controller
 		$ss = $this->post('session');
 		$nama = $this->post('nama');
 		$email = $this->post('email');
+		$nmbank = $this->post('namabank');
+		$nmrek = $this->post('namarekening');
+		$norek = $this->post('norekening');
 
 		if($this->_session_exist($ss))
 		{
-			if($this->usm->updateProfil($hp,$nama,$email))
+			if($this->usm->updateProfil($hp,$nama,$email,$nmbank,$nmrek,$norek))
 			{
 				$this->response([
 		            'status' => TRUE,
@@ -576,34 +613,91 @@ class User extends REST_Controller
 	{
 		return true;
 	}
-
-	private function _kirimSms($to,$nama,$otp)
+	
+	private function _kirimSMS($to, $otp)
 	{
-		$text = "Halo $nama, Terimakasih sudah melakukan registrasi MYNETPAY. Untuk melanjutkan, silahkan masukkan kode OTP berikut. Kode OTP:$otp";
+		$text = "Halo, Terimakasih sudah melakukan registrasi MYNETPAY. Untuk melanjutkan, silahkan masukkan kode OTP berikut : $otp";
+		$pecah              = explode(",",$to);
+	    $jumlah             = count($pecah);
+	    $from               = "SMSVIRO"; //Sender ID or SMS Masking Name, if leave blank, it will use default from telco
+	    $username           = "andikabayu"; //your smsviro username
+	    $password           = "suksesbersama85"; //your smsviro password
+	    $postUrl            = "http://107.20.199.106/restapi/sms/1/text/advanced"; # DO NOT CHANGE THIS
+	
+	    //for($i=0; $i<$jumlah; $i++){
+	        if(substr($to,0,2) == "62" || substr($to,0,3) == "+62"){
+	            $pecah = $pecah;
+	        }elseif(substr($to,0,1) == "0"){
+	            $to[0] = "X";
+	            $pecah = str_replace("X", "62", $to);
+	        }else{
+	            return array("messages" => "Invalid mobile number format");
+	        }
+	        $destination = array("to" => $pecah);
+	        $data = array(
+				"from" => $from,
+				"destinations" => $destination,
+				"text" => $text,
+				"notify" => true,
+				"notifyUrl" => "https://www.mynetpay.co.id/notify.php",
+				"notifyContentType" => "application/json",
+			);
+			
+			$postDataJson = json_encode(array("messages" => $data));
+	        //$postData           = array("messages" => array($message));
+	        //$postDataJson       = json_encode($postData);
+	        $ch                 = curl_init();
+	        $header             = array("Content-Type:application/json", "Accept:application/json");
+			
+	        curl_setopt($ch, CURLOPT_URL, $postUrl);
+	        curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+	        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+	        curl_setopt($ch, CURLOPT_USERPWD, $username . ":" . $password);
+	        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+	        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
+	        curl_setopt($ch, CURLOPT_MAXREDIRS, 2);
+	        curl_setopt($ch, CURLOPT_POST, 1);
+	        curl_setopt($ch, CURLOPT_POSTFIELDS, $postDataJson);
+	        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+	        $response = curl_exec($ch);
+	        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	        $responseBody = json_decode($response);
+	        curl_close($ch);
+			return $response;
+	    //}
+	}
+
+	private function _kirimSms_old($to,$otp)
+	{
+		$text = "Halo, Terimakasih sudah melakukan registrasi MYNETPAY. Untuk melanjutkan, silahkan masukkan kode OTP berikut : $otp";
 		//$pecah              = explode(",",$to);
 	    $from               = "SMSVIRO"; //Sender ID or SMS Masking Name, if leave blank, it will use default from telco
 	    $username           = "andikabayu"; //your smsviro username
 	    $password           = "suksesbersama85"; //your smsviro password
-	    $postUrl            = "http://107.20.199.106/restapi/sms/1/text/single"; # DO NOT CHANGE THIS
+	    $postUrl            = "http://107.20.199.106/restapi/sms/1/text/advanced"; # DO NOT CHANGE THIS
 		
 	    if(substr($to,0,2) == "62" || substr($to,0,3) == "+62"){
-            $$to = $to;
+            $to = $to;
         }elseif(substr($to,0,1) == "0"){
             $to[0] = "X";
             $to = str_replace("X", "62", $to);
         }else{
-            echo "Invalid mobile number format";
+            return array("messages"=>"Invalid mobile number format");
         }
 
 		$data = array(
 			"from" => $from,
-			"to" => $to,
+			"destinations" => array("to"=>$to),
 			"text" => $text,
+			"notify" => true,
+			"notifyUrl" => "https://www.mynetpay.co.id/notify.php",
+			"notifyContentType" => "application/json",
 		);
-		$postDataJson = json_encode($data);
+		$postDataJson = json_encode(array("messages" => $data));
 	    
         $ch                 = curl_init();
-        $header             = array("Content-Type:application/json", "Accept:application/json");
+        $header             = array("json_decode(json)", "Accept:application/json");
 		
         curl_setopt($ch, CURLOPT_URL, $postUrl);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
@@ -618,9 +712,9 @@ class User extends REST_Controller
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $responseBody = json_decode($response);
+        //$responseBody = json_decode($response);
         curl_close($ch);
 
-		return $responseBody;
+		return $response;
 	}
 }

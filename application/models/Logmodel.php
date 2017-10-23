@@ -7,12 +7,11 @@ class Logmodel extends CI_Model
 		parent::__construct();
 	}
 
-	function logAccess($api,$ip,$key,$ss,$var)
+	function logAccess($api,$ip,$ss,$var)
 	{
 		$data = array(
 			'api' => $api,
 			'ip_address' => $ip,
-			'apikey' => $key,
 			'session' => $ss,
 			'variable' => $var,
 			'waktu_akses' => date('Y-m-d H:i:s'),
