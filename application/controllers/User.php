@@ -19,18 +19,18 @@ class User extends REST_Controller
 	    if($this->usm->isHpExist($hp))
 	    {
 	        $this->response([
-		                'status' => FALSE,
-		                'kode' => 12011,
-		                'message' => 'No HP telah terdaftar'
-		            ], REST_Controller::HTTP_OK);
+                'status' => FALSE,
+                'kode' => 12011,
+                'message' => 'No HP telah terdaftar'
+            ], REST_Controller::HTTP_OK);
 	    }
 	    else
 	    {
 	        $this->response([
-		                'status' => TRUE,
-		                'kode' => 120012,
-		                'message' => 'No HP belum terdaftar'
-		            ], REST_Controller::HTTP_OK); 
+                'status' => TRUE,
+                'kode' => 120012,
+                'message' => 'No HP belum terdaftar'
+            ], REST_Controller::HTTP_OK); 
 	    }
 	}
 
@@ -48,20 +48,20 @@ class User extends REST_Controller
 			$this->usm->simpanSmsGateway($sms,$idsms,$hp,$otp);	
 	
 			$this->response([
-		            'status' => TRUE,
-		            'kode' => 11003,
-		            'message' => 'Kirim OTP berhasil',
-		            'otp' => $otp,
-		            'smsgateway' => $jsms
-		        ], REST_Controller::HTTP_OK);	
+	            'status' => TRUE,
+	            'kode' => 11003,
+	            'message' => 'Kirim OTP berhasil',
+	            'otp' => $otp,
+	            'smsgateway' => $jsms
+	        ], REST_Controller::HTTP_OK);	
 		}
 		else
 		{
 			$this->response([
-		                'status' => FALSE,
-		                'kode' => 11009,
-		                'message' => 'Gagal mengirim sms'
-		            ], REST_Controller::HTTP_OK);	
+                'status' => FALSE,
+                'kode' => 11009,
+                'message' => 'Gagal mengirim sms'
+            ], REST_Controller::HTTP_OK);	
 		}
 	}
 
@@ -179,11 +179,11 @@ class User extends REST_Controller
 			}
 			else
 			{
-					$this->response([
+				$this->response([
 	                'status' => FALSE,
 	                'kode' => 13003,
 	                'message' => 'Login tidak berhasil, gagal generate session!'
-	            ], REST_Controller::HTTP_BAD_REQUEST);		
+	            ], REST_Controller::HTTP_OK);		
 			}
 		}
 		else
@@ -192,7 +192,7 @@ class User extends REST_Controller
                 'status' => FALSE,
                 'kode' => 13002,
                 'message' => 'Username / Password tidak dikenali!'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -221,7 +221,7 @@ class User extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -248,7 +248,7 @@ class User extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -277,7 +277,7 @@ class User extends REST_Controller
 	                'status' => FALSE,
 	                'kode' => 14009,
 	                'message' => 'Data tidak ditemukan'
-	            ], REST_Controller::HTTP_BAD_REQUEST);
+	            ], REST_Controller::HTTP_OK);
 			}
 		}
 		else
@@ -286,7 +286,7 @@ class User extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -310,7 +310,7 @@ class User extends REST_Controller
 	                'status' => FALSE,
 	                'kode' => 15002,
 	                'message' => 'Gagal mengirimkan email reset password'
-	            ], REST_Controller::HTTP_BAD_REQUEST);
+	            ], REST_Controller::HTTP_OK);
 			}
 		}
 		else
@@ -319,7 +319,7 @@ class User extends REST_Controller
                 'status' => FALSE,
                 'kode' => 15003,
                 'message' => 'hp / email tidak terdaftar!'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -341,7 +341,7 @@ class User extends REST_Controller
                 'status' => FALSE,
                 'kode' => 13004,
                 'message' => 'Gagal logout'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -365,7 +365,7 @@ class User extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -396,7 +396,7 @@ class User extends REST_Controller
 	                'status' => FALSE,
 	                'kode' => 16003,
 	                'message' => 'Gagal update profil'
-	            ], REST_Controller::HTTP_BAD_REQUEST);
+	            ], REST_Controller::HTTP_OK);
 			}
 		}
 		else
@@ -405,7 +405,7 @@ class User extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -434,7 +434,7 @@ class User extends REST_Controller
 		                'status' => FALSE,
 		                'kode' => 17002,
 		                'message' => 'Gagal mengganti PIN'
-		            ], REST_Controller::HTTP_BAD_REQUEST);		
+		            ], REST_Controller::HTTP_OK);		
 				}
 			}	
 			else
@@ -443,7 +443,7 @@ class User extends REST_Controller
 	                'status' => FALSE,
 	                'kode' => 17003,
 	                'message' => 'PIN Lama tidak sesuai'
-	            ], REST_Controller::HTTP_BAD_REQUEST);
+	            ], REST_Controller::HTTP_OK);
 			}
 		}
 		else
@@ -452,7 +452,7 @@ class User extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -481,7 +481,7 @@ class User extends REST_Controller
 		                'status' => FALSE,
 		                'kode' => 18002,
 		                'message' => 'Gagal mengganti Password'
-		            ], REST_Controller::HTTP_BAD_REQUEST);		
+		            ], REST_Controller::HTTP_OK);		
 				}
 			}	
 			else
@@ -490,7 +490,7 @@ class User extends REST_Controller
 	                'status' => FALSE,
 	                'kode' => 18003,
 	                'message' => 'Password Lama tidak sesuai'
-	            ], REST_Controller::HTTP_BAD_REQUEST);
+	            ], REST_Controller::HTTP_OK);
 			}
 		}
 		else
@@ -499,7 +499,7 @@ class User extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 

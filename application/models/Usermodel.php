@@ -34,6 +34,7 @@ class Usermodel extends CI_Model
 
 	public function isHpExist($hp)
 	{
+		$this->db->select('id');
 		$this->db->where('hp',$hp);
 		$jum = $this->db->get('user')->num_rows();
 		if($jum == 1)
@@ -100,6 +101,7 @@ class Usermodel extends CI_Model
 
 	public function getSaldo($hp)
 	{
+		$this->db->select('saldo');
 		$this->db->where('hp',$hp);
 		$q = $this->db->get('user');
 		if($q->num_rows() == 1)
@@ -110,6 +112,7 @@ class Usermodel extends CI_Model
 
 	public function checkEmail($hp,$em)
 	{
+		$this->db->select('id');
 		$this->db->where('hp',$hp);
 		$this->db->where('email',$em);
 		if($this->db->get('user')->num_rows() == 1)
@@ -135,6 +138,7 @@ class Usermodel extends CI_Model
 
 	public function checkUserExist($hp)
 	{
+		$this->db->select('id');
 		$this->db->where('hp',$hp);
 		$jum = $this->db->get('user')->num_rows();
 		if($jum == 1)
@@ -145,6 +149,7 @@ class Usermodel extends CI_Model
 
 	public function cekLogin($hp,$ps)
 	{
+		$this->db->select('id');
 	    $this->db->where('hp',$hp);
 	    $this->db->where('password',MD5($ps));
 	    $jum = $this->db->get('user')->num_rows();
@@ -167,6 +172,7 @@ class Usermodel extends CI_Model
 
 	public function chekPinLama($hp,$pinlama)
 	{
+		$this->db->select('id');
 		$this->db->where('hp',$hp);
 		$this->db->where('pin',MD5($pinlama));
 		$jum = $this->db->get('user')->num_rows();
@@ -186,6 +192,7 @@ class Usermodel extends CI_Model
 
 	public function chekPasswordLama($hp,$passlama)
 	{
+		$this->db->select('id');
 		$this->db->where('hp',$hp);
 		$this->db->where('password',MD5($passlama));
 		$jum = $this->db->get('user')->num_rows();
@@ -205,6 +212,7 @@ class Usermodel extends CI_Model
 
 	public function getNamaFromHp($hp)
 	{
+		$this->db->select('nama');
 		$this->db->where('hp',$hp);
 		$q = $this->db->get('user');
 		if($q->num_rows() == 1)
@@ -224,6 +232,7 @@ class Usermodel extends CI_Model
 
 	public function bankDataExist($hp)
 	{
+		$this->db->select('nama_bank,nama_rekening,no_rekening');
 		$this->db->where('hp',$hp);
 		$q = $this->db->get('user');
 		if($q->num_rows() == 1)
@@ -246,6 +255,7 @@ class Usermodel extends CI_Model
 
 	public function enoughSaldoWithdraw($hp,$jumlah)
 	{
+		$this->db->select('saldo');
 		$this->db->where('hp',$hp);
 		$q = $this->db->get('user');
 		if($q->num_rows() == 1)

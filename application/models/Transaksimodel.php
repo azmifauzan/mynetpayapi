@@ -9,6 +9,7 @@ class Transaksimodel extends CI_Model
 
 	public function getLastInvoiceTopupId()
 	{
+		$this->db->select('id');
 		$this->db->order_by('id','desc');
 		$this->db->limit(1);
 		$q = $this->db->get('topup');
@@ -21,6 +22,7 @@ class Transaksimodel extends CI_Model
 	public function isUniqueTransferExist($jm)
 	{
 		//$this->db->where('hp',$hp);
+		$this->db->select('id');
 		$this->db->where('jumlah',$jm);
 		$this->db->where('konfirmasi',0);
 		$row = $this->db->get('topup')->num_rows();
@@ -74,6 +76,7 @@ class Transaksimodel extends CI_Model
 
 	public function checkEnoughSaldoBayar($hp,$jp)
 	{
+		$this->db->select('saldo');
 		$this->db->where('hp',$hp);
 		$q = $this->db->get('user');
 		$saldo = ($q->num_rows() == 1) ? $q->row()->saldo : 0;
@@ -114,6 +117,7 @@ class Transaksimodel extends CI_Model
 
 	public function checkPin($hp,$pin)
 	{
+		$this->db->select('id');
 		$this->db->where('pin',MD5($pin));
 		$this->db->where('hp',$hp);
 		$jum = $this->db->get('user')->num_rows();
@@ -167,5 +171,47 @@ class Transaksimodel extends CI_Model
 		);
 
 		return $this->db->insert('withdraw',$data);
+	}
+
+	public function transaksiProdukMitra($hp,$produk,$param)
+	{
+		$this->db->trans_start();
+		$this->db->query("INSERT INTO trx(hp_pengirim,hp_penerima,waktu_transaksi,debetkredit,jumlah,jenis_transaksi,keterangan) VALUES('".$hp."','".$produk->no_hp_mitra."','".date('Y-m-d H:i:s')."','kredit','".$produk->harga."','2','".$param."')");
+		$this->db->query("UPDATE user SET saldo = saldo-".$produk->harga." WHERE hp='".$hp."'");
+		$this->db->query("UPDATE user SET saldo = saldo+".$produk->harga." WHERE hp='".$produk->no_hp_mitra."'");
+		$this->db->trans_complete();
+
+		return $this->db->trans_status();
+	}
+
+	public function transaksiKonfirmasiTopup($hp,$iv,$bk,$bank)
+	{
+		$this->db->trans_start();
+		$this->db->query("INSERT INTO konfirmasi_topup(hp,invoice,bukti,bank,waktu) VALUES('".$hp."','".$iv."','".$bk."','".$bank."','".date('Y-m-d H:i:s')."')");
+		$this->db->query("UPDATE topup SET konfirmasi = 1 WHERE hp = '".$hp."' AND invoice = '".$iv."'");
+		$this->db->trans_complete();
+
+		return $this->db->trans_status();
+	}
+
+	public function transaksiPembayaran($hp,$hpp,$jp,$ket)
+	{
+		$this->db->trans_start();
+		$this->db->query("INSERT INTO trx(hp_pengirim,hp_penerima,waktu_transaksi,debetkredit,jumlah,jenis_transaksi,keterangan) VALUES('".$hp."','".$hpp."','".date('Y-m-d H:i:s')."','kredit','".$jp."','2','".$ket."')");
+		$this->db->query("UPDATE user SET saldo = saldo-".$jp." WHERE hp='".$hp."'");
+		$this->db->query("UPDATE user SET saldo = saldo+".$jp." WHERE hp='".$hpp."'");
+		$this->db->trans_complete();
+
+		return $this->db->trans_status();
+	}
+
+	public function transaksiWithdraw($hp,$jumlah)
+	{
+		$this->db->trans_start();
+		$this->db->query("INSERT INTO withdraw(waktu,hp,jumlah) VALUES('".date('Y-m-d H:i:s')."','".$hp."','".$jumlah."')");
+		$this->db->query("UPDATE user SET saldo = saldo-".$jumlah." WHERE hp='".$hp."'");
+		$this->db->trans_complete();
+
+		return $this->db->trans_status();
 	}
 }

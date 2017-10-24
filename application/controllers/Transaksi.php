@@ -43,7 +43,7 @@ class Transaksi extends REST_Controller
 	                'status' => FALSE,
 	                'kode' => 21002,
 	                'message' => 'Gagal menyimpan topup'
-	            ], REST_Controller::HTTP_BAD_REQUEST);
+	            ], REST_Controller::HTTP_OK);
 			}
 		}
 		else
@@ -52,7 +52,7 @@ class Transaksi extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -66,23 +66,41 @@ class Transaksi extends REST_Controller
 
 		if($this->_session_exist($ss))
 		{
-			if($this->trm->addBuktiKonfirmasi($hp,$iv,$bk,$bank))
+			// if($this->trm->addBuktiKonfirmasi($hp,$iv,$bk,$bank))
+			// {
+			// 	$this->trm->updateKonfirmasiTopup($hp,$iv);
+			// 	$this->response([
+	  		//               'status' => TRUE,
+	  		//               'kode' => 21003,
+	  		//               'message' => 'Berhasil menyimpan konfirmasi topup',
+	  		//               'no_invoice' => $iv
+	  		//           ], REST_Controller::HTTP_OK);
+			// }
+			// else
+			// {
+			// 	$this->response([
+	  		//               'status' => FALSE,
+	  		//               'kode' => 21004,
+	  		//               'message' => 'Gagal menyimpan konfirmasi topup'
+	  		//           ], REST_Controller::HTTP_OK);
+			// }
+
+			if($this->trm->transaksiKonfirmasiTopup($hp,$iv,$bk,$bank) === FALSE)
 			{
-				$this->trm->updateKonfirmasiTopup($hp,$iv);
 				$this->response([
-	                'status' => TRUE,
-	                'kode' => 21003,
-	                'message' => 'Berhasil menyimpan konfirmasi topup',
-	                'no_invoice' => $iv
-	            ], REST_Controller::HTTP_OK);
+	              	'status' => FALSE,
+	              	'kode' => 21004,
+	              	'message' => 'Gagal menyimpan konfirmasi topup'
+	          	], REST_Controller::HTTP_OK);
 			}
 			else
 			{
 				$this->response([
-	                'status' => FALSE,
-	                'kode' => 21004,
-	                'message' => 'Gagal menyimpan konfirmasi topup'
-	            ], REST_Controller::HTTP_BAD_REQUEST);
+	              	'status' => TRUE,
+	              	'kode' => 21003,
+	              	'message' => 'Berhasil menyimpan konfirmasi topup',
+	              	'no_invoice' => $iv
+	          	], REST_Controller::HTTP_OK);
 			}
 		}
 		else
@@ -91,7 +109,7 @@ class Transaksi extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -115,7 +133,7 @@ class Transaksi extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);	
+            ], REST_Controller::HTTP_OK);	
 		}
 	}
 
@@ -143,7 +161,7 @@ class Transaksi extends REST_Controller
 	                'kode' => 22002,
 	                'hppenjual' => $hp,
 	                'message' => 'Penjual tidak terdaftar'
-            	], REST_Controller::HTTP_BAD_REQUEST);
+            	], REST_Controller::HTTP_OK);
 			}
 		}
 		else
@@ -152,7 +170,7 @@ class Transaksi extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -174,7 +192,7 @@ class Transaksi extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -198,7 +216,7 @@ class Transaksi extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -216,25 +234,53 @@ class Transaksi extends REST_Controller
 			{
 				if($this->trm->checkEnoughSaldoBayar($hp,$produk->harga))
 				{
-					if($this->trm->addTransaksiPembayaran($hp,$produk->no_hp_mitra,$produk->harga,$param) && $this->trm->kurangiSaldo($hp,$produk->harga) && $this->trm->tambahSaldo($produk->no_hp_mitra,$produk->harga))
+					// if($this->trm->addTransaksiPembayaran($hp,$produk->no_hp_mitra,$produk->harga,$param) && $this->trm->kurangiSaldo($hp,$produk->harga) && $this->trm->tambahSaldo($produk->no_hp_mitra,$produk->harga))
+					// {
+					// 	$this->response([
+					//         'status' => TRUE,
+					//         'kode' => 25002,
+			  		//		   'hppembeli' => $hp,
+			  		//	       'hppenjual' => $produk->no_hp_mitra,
+			  		//         'jumlahpembayaran' => $produk->harga,
+			  		//         'saldopembeli' => $this->usm->getSaldo($hp),
+			  		//         'message' => 'Pembelian produk berhasil',
+			  		//   ], REST_Controller::HTTP_OK);
+					// }
+					// else
+					// {
+					// 	$this->response([
+			  		//         'status' => FALSE,
+			  		//         'kode' => 25003,
+			  		//         'message' => 'Gagal untuk memproses pembelian'
+			  		//   ], REST_Controller::HTTP_OK);
+					// }
+
+					//$this->db->trans_start();
+					
+					//$this->trm->addTransaksiPembayaran($hp,$produk->no_hp_mitra,$produk->harga,$param);
+					//$this->trm->kurangiSaldo($hp,$produk->harga);
+					//$this->trm->tambahSaldo($produk->no_hp_mitra,$produk->harga);
+					//$this->db->trans_complete();
+
+					if ($this->trm->transaksiProdukMitra($hp,$produk,$param) === FALSE)
 					{
 						$this->response([
-			                'status' => TRUE,
-			                'kode' => 25002,
-			                'hppembeli' => $hp,
-			                'hppenjual' => $produk->no_hp_mitra,
-			                'jumlahpembayaran' => $produk->harga,
-			                'saldopembeli' => $this->usm->getSaldo($hp),
-			                'message' => 'Pembelian produk berhasil',
-			            ], REST_Controller::HTTP_OK);
+			  		        'status' => FALSE,
+			  		        'kode' => 25003,
+			  		        'message' => 'Gagal untuk memproses pembelian'
+			  		  	], REST_Controller::HTTP_OK);
 					}
 					else
 					{
 						$this->response([
-			                'status' => FALSE,
-			                'kode' => 25003,
-			                'message' => 'Gagal untuk memproses pembelian'
-			            ], REST_Controller::HTTP_BAD_REQUEST);
+					        'status' => TRUE,
+					        'kode' => 25002,
+			  				'hppembeli' => $hp,
+			  			    'hppenjual' => $produk->no_hp_mitra,
+			  		        'jumlahpembayaran' => $produk->harga,
+			  		        'saldopembeli' => $this->usm->getSaldo($hp),
+			  		        'message' => 'Pembelian produk berhasil',
+			  		  	], REST_Controller::HTTP_OK);
 					}
 				}
 				else
@@ -243,7 +289,7 @@ class Transaksi extends REST_Controller
 		                'status' => FALSE,
 		                'kode' => 23004,
 		                'message' => 'Saldo tidak cukup'
-		            ], REST_Controller::HTTP_BAD_REQUEST);		
+		            ], REST_Controller::HTTP_OK);		
 				}
 			}
 			else
@@ -252,7 +298,7 @@ class Transaksi extends REST_Controller
 	                'status' => FALSE,
 	                'kode' => 23003,
 	                'message' => 'PIN tidak sesuai'
-	            ], REST_Controller::HTTP_BAD_REQUEST);
+	            ], REST_Controller::HTTP_OK);
 			}
 		}
 		else
@@ -261,7 +307,7 @@ class Transaksi extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -279,25 +325,46 @@ class Transaksi extends REST_Controller
 			{
 				if($this->trm->checkEnoughSaldoBayar($hp,$jp))
 				{
-					if($this->trm->addTransaksiPembayaran($hp,$hpp,$jp,$ket) && $this->trm->kurangiSaldo($hp,$jp) && $this->trm->tambahSaldo($hpp,$jp))
+					//if($this->trm->addTransaksiPembayaran($hp,$hpp,$jp,$ket) && $this->trm->kurangiSaldo($hp,$jp) && $this->trm->tambahSaldo($hpp,$jp))
+					// {
+					// 	$this->response([
+			  		//               'status' => TRUE,
+			  		//               'kode' => 23001,
+			  		//               'hppembeli' => $hp,
+			  		//               'hppenjual' => $hpp,
+			  		//               'jumlahpembayaran' => $jp,
+			  		//               'saldopembeli' => $this->usm->getSaldo($hp),
+			  		//               'message' => 'pembayaran berhasil',
+			  		//           ], REST_Controller::HTTP_OK);
+					// }
+					// else
+					// {
+					// 	$this->response([
+			  		//               'status' => FALSE,
+			  		//               'kode' => 23002,
+			  		//               'message' => 'Gagal untuk memproses pembayaran'
+			  		//           ], REST_Controller::HTTP_OK);
+					// }
+
+					if($this->trm->transaksiPembayaran($hp,$hpp,$jp,$ket) === FALSE)
 					{
 						$this->response([
-			                'status' => TRUE,
-			                'kode' => 23001,
-			                'hppembeli' => $hp,
-			                'hppenjual' => $hpp,
-			                'jumlahpembayaran' => $jp,
-			                'saldopembeli' => $this->usm->getSaldo($hp),
-			                'message' => 'pembayaran berhasil',
-			            ], REST_Controller::HTTP_OK);
+	  		              	'status' => FALSE,
+	  		              	'kode' => 23002,
+	  		              	'message' => 'Gagal untuk memproses pembayaran'
+	  		          	], REST_Controller::HTTP_OK);
 					}
 					else
 					{
 						$this->response([
-			                'status' => FALSE,
-			                'kode' => 23002,
-			                'message' => 'Gagal untuk memproses pembayaran'
-			            ], REST_Controller::HTTP_BAD_REQUEST);
+	  		              	'status' => TRUE,
+	  		              	'kode' => 23001,
+	  		              	'hppembeli' => $hp,
+	  		              	'hppenjual' => $hpp,
+	  		              	'jumlahpembayaran' => $jp,
+	  		              	'saldopembeli' => $this->usm->getSaldo($hp),
+	  		              	'message' => 'pembayaran berhasil',
+	  		          	], REST_Controller::HTTP_OK);
 					}
 				}
 				else
@@ -306,7 +373,7 @@ class Transaksi extends REST_Controller
 		                'status' => FALSE,
 		                'kode' => 23004,
 		                'message' => 'Saldo tidak cukup'
-		            ], REST_Controller::HTTP_BAD_REQUEST);		
+		            ], REST_Controller::HTTP_OK);		
 				}
 			}
 			else
@@ -315,7 +382,7 @@ class Transaksi extends REST_Controller
 	                'status' => FALSE,
 	                'kode' => 23003,
 	                'message' => 'PIN tidak sesuai'
-	            ], REST_Controller::HTTP_BAD_REQUEST);
+	            ], REST_Controller::HTTP_OK);
 			}
 		}
 		else
@@ -324,7 +391,7 @@ class Transaksi extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -346,7 +413,7 @@ class Transaksi extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
@@ -364,21 +431,38 @@ class Transaksi extends REST_Controller
 				{
 					if($this->trm->checkPin($hp,$pin))
 					{
-						if($this->trm->addWithdraw($hp,$jumlah) && $this->trm->kurangiSaldo($hp,$jumlah))
+						// if($this->trm->addWithdraw($hp,$jumlah) && $this->trm->kurangiSaldo($hp,$jumlah))
+						// {
+						// 	$this->response([
+				  		//               'status' => TRUE,
+				  		//               'kode' => 24001,
+				  		//               'message' => 'Withdraw berhasil ditambahkan'
+				  		//           ], REST_Controller::HTTP_OK);
+						// }	
+						// else
+						// {
+						// 	$this->response([
+				  		//               'status' => FALSE,
+				  		//               'kode' => 24002,
+				  		//               'message' => 'Gagal menambahkan data withdraw!'
+				  		//           ], REST_Controller::HTTP_OK);
+						// }
+
+						if ($this->trm->transaksiWithdraw($hp,$jumlah) === FALSE) 
 						{
 							$this->response([
-				                'status' => TRUE,
-				                'kode' => 24001,
-				                'message' => 'Withdraw berhasil ditambahkan'
-				            ], REST_Controller::HTTP_OK);
-						}	
+		  		              	'status' => FALSE,
+		  		              	'kode' => 24002,
+		  		              	'message' => 'Gagal menambahkan data withdraw!'
+		  		          	], REST_Controller::HTTP_OK);
+						}
 						else
 						{
 							$this->response([
-				                'status' => FALSE,
-				                'kode' => 24002,
-				                'message' => 'Gagal menambahkan data withdraw!'
-				            ], REST_Controller::HTTP_BAD_REQUEST);
+		  		              	'status' => TRUE,
+		  		              	'kode' => 24001,
+		  		              	'message' => 'Withdraw berhasil ditambahkan'
+		  		          	], REST_Controller::HTTP_OK);
 						}
 					}
 					else
@@ -387,7 +471,7 @@ class Transaksi extends REST_Controller
 			                'status' => FALSE,
 			                'kode' => 23003,
 			                'message' => 'PIN tidak sesuai'
-			            ], REST_Controller::HTTP_BAD_REQUEST);
+			            ], REST_Controller::HTTP_OK);
 					}
 				}
 				else
@@ -396,7 +480,7 @@ class Transaksi extends REST_Controller
 		                'status' => FALSE,
 		                'kode' => 24004,
 		                'message' => 'Jumlah saldo yang akan ditarik tidak mencukupi!'
-		            ], REST_Controller::HTTP_BAD_REQUEST);
+		            ], REST_Controller::HTTP_OK);
 				}
 			}
 			else
@@ -405,7 +489,7 @@ class Transaksi extends REST_Controller
 	                'status' => FALSE,
 	                'kode' => 24003,
 	                'message' => 'Data Bank masih kosong, Silahkan update profil!'
-	            ], REST_Controller::HTTP_BAD_REQUEST);
+	            ], REST_Controller::HTTP_OK);
 			}
 		}
 		else
@@ -414,7 +498,7 @@ class Transaksi extends REST_Controller
                 'status' => FALSE,
                 'kode' => 10003,
                 'message' => 'Invalid Session'
-            ], REST_Controller::HTTP_BAD_REQUEST);
+            ], REST_Controller::HTTP_OK);
 		}
 	}
 
